@@ -1,0 +1,9 @@
+# mouse Grin1: "2:25291177-25319253"
+
+# sorting + indexing bamfiles
+samtools sort my.bam -o my_sorted.bam
+samtools index my_sorted.bam
+
+
+# subsetting bamfiles
+samtools view -h -b in.bam 'chromosome location' > out.bam

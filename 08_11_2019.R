@@ -11,6 +11,7 @@ library("rtracklayer")
 library("Rsubread")
 library("erer")
 library("plyr")
+library("ggplot2")
 
 # making txdb
 txdb <- makeTxDbFromGFF("datafiles/Mus_musculus.GRCm38.98.gtf", format="gtf")
@@ -103,7 +104,7 @@ feature_list <- unique(gtf_df[7])
 feature_list
 
 # function to find genes with successful alignments
-nonzero_counts <- function(counts, df, cat) {
+nonzero_counts <- function(counts, cat) {
   
   # dataframe to store count data 
   df <- data.frame(Gene_ID = character(),
@@ -122,6 +123,33 @@ nonzero_counts <- function(counts, df, cat) {
       } else if (cat == "introns") {
         df <- rbind(df, data.frame("Gene_ID" = rownames(counts)[i], "exons" = 0, 
                                    "genes" = 0, "introns" = counts[i]))
+      }
+    }
+  }
+  
+  return(df)
+}
+
+# function to create dataframe with exon, gene and intron data
+combine_counts <- function(e_count, g_count) {
+  
+  # merge the exon and gene data
+  temp <- merge(e_count, g_count, by = "row.names")
+  
+  # dataframe to store count data 
+  df <- data.frame(Gene_ID = character(),
+                   exons = integer(), 
+                   genes = integer(), 
+                   introns = integer())
+  
+  for (i in 1:length(temp[,1])) {
+    if (temp[i, 2] != 0 && temp[i, 3] != 0) {
+      if (temp[i, 3] - temp[i, 2] >= 0) {
+        df <- rbind(df, data.frame("Gene_ID" = temp[i, 1], "exons" = temp[i, 2], 
+                                   "genes" = temp[i, 3], "introns" = temp[i, 3] - temp[i, 2]))
+      } else {
+        df <- rbind(df, data.frame("Gene_ID" = temp[i, 1], "exons" = temp[i, 2], 
+                                   "genes" = temp[i, 3], "introns" = 0))
       }
     }
   }
@@ -177,6 +205,82 @@ temp_mt_f_g <- featureCounts(files="datafiles/mutant_female_2.bam",
                        isGTFAnnotationFile = TRUE, GTF.featureType="gene", GTF.attrType="gene_id", 
                        isPairedEnd = TRUE)
 
-result_e <- nonzero_counts(temp_mt_f_e$counts, results, "exons")
-result_g <- nonzero_counts(temp_mt_f_g$counts, results, "genes")
+result_e <- nonzero_counts(temp_mt_f_e$counts, "exons")
+result_g <- nonzero_counts(temp_mt_f_g$counts, "genes")
 result <- merge(result_e, result_g, by = "Gene_ID", all = TRUE)
+
+# comparison count table (mutant female full genome)
+mt_f_e <- featureCounts(files="datafiles/mutant_female.bam",
+                             annot.ext="datafiles/Mus_musculus.GRCm38.98.gtf",
+                             isGTFAnnotationFile = TRUE, GTF.featureType="exon", GTF.attrType="gene_id", 
+                             isPairedEnd = TRUE)
+mt_f_g <- featureCounts(files="datafiles/mutant_female.bam",
+                             annot.ext="datafiles/Mus_musculus.GRCm38.98.gtf",
+                             isGTFAnnotationFile = TRUE, GTF.featureType="gene", GTF.attrType="gene_id", 
+                             isPairedEnd = TRUE)
+
+# comparison count table (wildtype female full genome)
+wt_f_e <- featureCounts(files="datafiles/wildtype_female.bam",
+                        annot.ext="datafiles/Mus_musculus.GRCm38.98.gtf",
+                        isGTFAnnotationFile = TRUE, GTF.featureType="exon", GTF.attrType="gene_id", 
+                        isPairedEnd = TRUE)
+wt_f_g <- featureCounts(files="datafiles/wildtype_female.bam",
+                        annot.ext="datafiles/Mus_musculus.GRCm38.98.gtf",
+                        isGTFAnnotationFile = TRUE, GTF.featureType="gene", GTF.attrType="gene_id", 
+                        isPairedEnd = TRUE)
+
+# comparison count table (wildtype male full genome)
+wt_m_e <- featureCounts(files="datafiles/wildtype_male.bam",
+                        annot.ext="datafiles/Mus_musculus.GRCm38.98.gtf",
+                        isGTFAnnotationFile = TRUE, GTF.featureType="exon", GTF.attrType="gene_id", 
+                        isPairedEnd = TRUE)
+wt_m_g <- featureCounts(files="datafiles/wildtype_male.bam",
+                        annot.ext="datafiles/Mus_musculus.GRCm38.98.gtf",
+                        isGTFAnnotationFile = TRUE, GTF.featureType="gene", GTF.attrType="gene_id", 
+                        isPairedEnd = TRUE)
+
+# combine count matrices
+mt_f_df <- combine_counts(mt_f_e$counts, mt_f_g$counts)
+wt_f_df <- combine_counts(wt_f_e$counts, wt_f_g$counts)
+wt_m_df <- combine_counts(wt_m_e$counts, wt_m_g$counts)
+
+# build df for grouped bar plot
+group_df <- data.frame(Gene_ID = character(), condition = character(), value = integer())
+
+group_df <- rbind(group_df, data.frame("sample" = "mt female", "condition" = "exons", 
+                                       "value" = sum(mt_f_df$exons)))
+group_df <- rbind(group_df, data.frame("sample" = "mt female", "condition" = "genes", 
+                                       "value" = sum(mt_f_df$genes)))
+group_df <- rbind(group_df, data.frame("sample" = "mt female", "condition" = "introns", 
+                                       "value" = sum(mt_f_df$introns)))
+
+group_df <- rbind(group_df, data.frame("sample" = "wt female", "condition" = "exons", 
+                                       "value" = sum(wt_f_df$exons)))
+group_df <- rbind(group_df, data.frame("sample" = "wt female", "condition" = "genes", 
+                                       "value" = sum(wt_f_df$genes)))
+group_df <- rbind(group_df, data.frame("sample" = "wt female", "condition" = "introns", 
+                                       "value" = sum(wt_f_df$introns)))
+
+group_df <- rbind(group_df, data.frame("sample" = "wt male", "condition" = "exons", 
+                                       "value" = sum(wt_m_df$exons)))
+group_df <- rbind(group_df, data.frame("sample" = "wt male", "condition" = "genes", 
+                                       "value" = sum(wt_m_df$genes)))
+group_df <- rbind(group_df, data.frame("sample" = "wt male", "condition" = "introns", 
+                                       "value" = sum(wt_m_df$introns)))
+# grouped plotting
+ggplot(group_df, aes(fill=condition, y=value, x=sample)) + geom_bar(position="dodge", stat="identity")
+
+# stacked plotting 
+ggplot(group_df, aes(fill=condition, y=value, x=sample)) + geom_bar(position="stack", stat="identity")
+
+# exon vs intron scatter plotting - mt female
+ggplot(mt_f_df, aes(x=exons, y=introns)) + geom_point()
+ggplot(mt_f_df, aes(x=exons, y=introns)) + geom_point() + geom_text(label=mt_f_df$Gene_ID) 
+
+# exon vs intron scatter plotting - wt female
+ggplot(wt_f_df, aes(x=exons, y=introns)) + geom_point()
+ggplot(wt_f_df, aes(x=exons, y=introns)) + geom_point() + geom_text(label=wt_f_df$Gene_ID)
+
+# exon vs intron scatter plotting - wt male
+ggplot(wt_m_df, aes(x=exons, y=introns)) + geom_point()
+ggplot(wt_m_df, aes(x=exons, y=introns)) + geom_point() + geom_text(label=wt_m_df$Gene_ID)

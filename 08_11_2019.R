@@ -42,6 +42,8 @@ cov_wt_f.numeric <- as.numeric(cov_wt_f[zoom][[1]])
 cov_wt_m.numeric <- as.numeric(cov_wt_m[zoom][[1]])
 cov_mt_f.numeric <- as.numeric(cov_mt_f[zoom][[1]])
 
+median(cov_mt_f.numeric, cov_wt_f.numeric, cov_wt_m.numeric)
+
 # plotting
 plot(cov_wt_f.numeric, type="h")
 plot(cov_wt_m.numeric, type="h")

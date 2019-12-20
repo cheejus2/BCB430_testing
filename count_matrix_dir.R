@@ -4,7 +4,7 @@
 # arguments should be: 
 # 1. directory of bamfiles 2. gtf file 3. "combine" or "individ" (combine or use individual count matrices)
 
-# NOTE: DON'T USE THE COMBINE ARGUMENT
+# NOTE: DON'T USE THE COMBINE ARGUMENT (removes indivduality of samples)
 
 library("Rsubread")
 library("dplyr")

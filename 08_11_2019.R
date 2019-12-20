@@ -16,7 +16,7 @@ library("ggplot2")
 # making txdb
 txdb <- makeTxDbFromGFF("datafiles/Mus_musculus.GRCm38.98.gtf", format="gtf")
 
-# setting genomic range
+# setting genomic range, retreved from: https://www.ncbi.nlm.nih.gov/gene/14810
 total.range <- GRanges("2", IRanges(25291177, 25319253))
 
 # genome alignments

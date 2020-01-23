@@ -26,13 +26,13 @@ csv_files <- list.files(path = args[1], pattern = "\\.csv$")
 csv_files <- grep(csv_files, pattern='combined_counts.csv', inv=T, value=T)
 
 # initialize dataframe containing stacked barplot data
-stack_df <- data.frame(gene_id = character(), condition = character(), value = integer())
+stack_df <- data.frame(sample = character(), condition = character(), value = integer())
 
 for (i in csv_files) {
   
   count_matrix <- read.csv(file = paste(args[1], "/", i, sep = ""))
   
-  temp <- data.frame(gene_id = rep(substr(i, 1, nchar(i) - 10), 2),
+  temp <- data.frame(sample = rep(substr(i, 1, nchar(i) - 10), 2),
                      condition = c("exons", "introns"),
                      value = c(sum(count_matrix$exons), sum(count_matrix$introns)))
   
@@ -41,14 +41,18 @@ for (i in csv_files) {
 
 jpeg(paste(args[1], "/", "stacked.jpg", sep = ""))
 
-ggplot(stack_df, aes(fill = condition, y = value, x = gene_id)) + 
-  geom_bar(position = "stack", stat = "identity")
+ggplot(stack_df, aes(fill = condition, y = value, x = sample)) + 
+  geom_bar(position = "stack", stat = "identity") + 
+  xlab("Sample") + ylab("Counts") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 dev.off()
 
 jpeg(paste(args[1], "/", "percent_stacked.jpg", sep = ""))
 
-ggplot(stack_df, aes(fill = condition, y = value, x = gene_id)) + 
-  geom_bar(position = "fill", stat = "identity")
+ggplot(stack_df, aes(fill = condition, y = value, x = sample)) + 
+  geom_bar(position = "fill", stat = "identity") + 
+  xlab("Sample") + ylab("percentage") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 dev.off()

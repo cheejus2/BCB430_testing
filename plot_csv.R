@@ -32,7 +32,7 @@ for (i in csv_files) {
   
   count_matrix <- read.csv(file = paste(args[1], "/", i, sep = ""))
   
-  temp <- data.frame(sample = rep(substr(i, 1, nchar(i) - 10), 2),
+  temp <- data.frame(sample = rep(gsub("[^0-9]", "", i), 2),
                      condition = c("exons", "introns"),
                      value = c(sum(count_matrix$exons), sum(count_matrix$introns)))
   
@@ -43,7 +43,7 @@ jpeg(paste(args[1], "/", "stacked.jpg", sep = ""))
 
 ggplot(stack_df, aes(fill = condition, y = value, x = sample)) + 
   geom_bar(position = "stack", stat = "identity") + 
-  xlab("Sample") + ylab("Counts") + 
+  xlab("Sample") + ylab("Counts") + ggtitle("Stacked Counts")
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 dev.off()
@@ -52,7 +52,7 @@ jpeg(paste(args[1], "/", "percent_stacked.jpg", sep = ""))
 
 ggplot(stack_df, aes(fill = condition, y = value, x = sample)) + 
   geom_bar(position = "fill", stat = "identity") + 
-  xlab("Sample") + ylab("percentage") + 
+  xlab("Sample") + ylab("percentage") + ggtitle("Percentage Counts")
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 dev.off()

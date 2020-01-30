@@ -2,9 +2,7 @@
 
 # script that produces count matrix from directory of bamfiles
 # arguments should be: 
-# 1. directory of bamfiles 2. gtf file 3. "combine" or "individ" (combine or use individual count matrices)
-
-# NOTE: DON'T USE THE COMBINE ARGUMENT (removes indivduality of samples)
+# 1. directory of bamfiles 2. gtf file
 
 library("Rsubread")
 library("dplyr")
@@ -40,23 +38,15 @@ combine_counts <- function(e_count, g_count) {
 args = commandArgs(trailingOnly = TRUE)
 
 if (length(args) == 0) {
-  stop("One argument must be supplied (directory of bamfiles)", call.=FALSE)
-} else if (length(args) > 3) {
-  stop("3 arguments must be supplied: 1. directory of bamfiles 2. gtf file 3. combine or individ", call.=FALSE)
+  stop("two argument must be supplied (directory of bamfiles)", call.=FALSE)
+} else if (length(args) > 2) {
+  stop("2 arguments must be supplied: 1. directory of bamfiles 2. gtf file", call.=FALSE)
 } else if (!dir.exists(args[1])) {
   stop("Invalid directory", call.False)
 }
 
 # list of bam files in given directory
 folder_files <- list.files(path = args[1], pattern = "\\.bam$")
-
-# creating dataframe to hold combined counts
-if (args[3] == "combine") {
-  combined <- data.frame(Gene_ID = character(),
-                    exons = integer(), 
-                    genes = integer(), 
-                    introns = integer())
-}
 
 for (i in folder_files) {
   
@@ -74,13 +64,7 @@ for (i in folder_files) {
   # temp dataframe holding exon, gene and intron counts
   temp_df <- combine_counts(temp_e$counts, temp_g$counts)
   
-  if (args[3] == "individ") {  # write csv files for each bam file
-    write.csv(temp_df, file = paste(args[1], "/", tools::file_path_sans_ext(i), "_count.csv", sep = ""))
-  } else if (args[3] == "combine") {  # write combined csv file for all bam files
-    combined <- bind_rows(combined, temp_df) %>% group_by(Gene_ID) %>% summarise_all(sum)
-  }
-}
+  # writing temp dataframe (count matrix) as csv file
+  write.csv(temp_df, file = paste(args[1], "/", tools::file_path_sans_ext(i), "_count.csv", sep = ""))
 
-if (args[3] == "combine") {
-  write.csv(combined, file = paste(args[1], "/", "combined_counts.csv", sep = ""))
 }

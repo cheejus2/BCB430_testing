@@ -18,8 +18,10 @@ if (length(args) > 1 | length(args) < 1) {
   stop("Invalid csv directory", call.False)
 }
 
+csv_dir <- "/external/rprshnas01/netdata_kcni/stlab/kristina_patchseq_processed/STAR_results/pcrless_bams/InExCounts/"
+
 # list of csv files in given directory
-csv_files <- list.files(path = args[1], pattern = "\\.csv$")
+csv_files <- list.files(path = csv_dir, pattern = "\\.csv$")
 
 # ignore csv produced by script combine_csv.R
 csv_files <- grep(csv_files, pattern='^combined', inv=T, value=T)
@@ -31,33 +33,34 @@ combined_introns <- data.frame(Gene_ID = character())
 
 combined_genes <- data.frame(Gene_ID = character())
 
+# Gene_ID, exons -> Rsubread | gene_id, exon_count -> Allen Institute
 for (i in csv_files) {
   
   # temp variable to hold count matrix data for sample
-  count_matrix <- read.csv(file = paste(args[1], "/", i, sep = ""))
+  count_matrix <- read.csv(file = paste(csv_dir, "/", i, sep = ""))
   sample_name <- tools::file_path_sans_ext(i)
   
   # temp df to hold exon data for sample
-  exon_holder <- data.frame(Gene_ID = count_matrix$Gene_ID,
-                            temp_name = count_matrix$exons)
+  exon_holder <- data.frame(Gene_ID = count_matrix$gene_id,
+                            temp_name = count_matrix$exon_count)
   names(exon_holder)[names(exon_holder) == "temp_name"] <- sample_name
   
   # temp df to hold intron data for sample
-  intron_holder <- data.frame(Gene_ID = count_matrix$Gene_ID,
-                              temp_name = count_matrix$introns)
+  intron_holder <- data.frame(Gene_ID = count_matrix$gene_id,
+                              temp_name = count_matrix$intron_count)
   names(intron_holder)[names(intron_holder) == "temp_name"] <- sample_name
   
   # temp df to hold gene data for sample
-  gene_holder <- data.frame(Gene_ID = count_matrix$Gene_ID,
-                              temp_name = count_matrix$genes)
-  names(gene_holder)[names(gene_holder) == "temp_name"] <- sample_name
-  
+  # gene_holder <- data.frame(Gene_ID = count_matrix$Gene_ID,
+  #                             temp_name = count_matrix$genes)
+  # names(gene_holder)[names(gene_holder) == "temp_name"] <- sample_name
+   
   # adding individual sample data to combined count matrices
   combined_exons <- merge(combined_exons, exon_holder, all = TRUE)
   combined_introns <- merge(combined_introns, intron_holder, all = TRUE)
-  combined_genes <- merge(combined_genes, gene_holder, all = TRUE)
+  # combined_genes <- merge(combined_genes, gene_holder, all = TRUE)
 }
 
-write.csv(combined_exons, file = paste(args[1], "/", "combined_exons.csv", sep = ""))
-write.csv(combined_introns, file = paste(args[1], "/", "combined_introns.csv", sep = ""))
-write.csv(combined_genes, file = paste(args[1], "/", "combined_genes.csv", sep = ""))
+write.csv(combined_exons, file = paste(csv_dir, "/", "combined_exons.csv", sep = ""))
+write.csv(combined_introns, file = paste(csv_dir, "/", "combined_introns.csv", sep = ""))
+write.csv(combined_genes, file = paste(csv_dir, "/", "combined_genes.csv", sep = ""))
